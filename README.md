@@ -13,6 +13,7 @@ In docker-compose.yml, change the environment variables:
 - EMAIL: where you will receive updates from letsencrypt.
 - CONCAT: true or false, whether you want to concatenate the certificate's full chain with the private key (required for e.g. haproxy), or keep the two files separate (required for e.g. nginx or apache).
 - SEPARATE: true or false, whether you want one certificate per domain or one certificate valid for all domains. 
+- DRYRUN: true or false, whether you want to perform actions with `--dry-run`
 
 ## Running
 

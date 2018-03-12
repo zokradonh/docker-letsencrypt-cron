@@ -46,6 +46,11 @@ then
   args=$args" --debug"
 fi
 
+if $DRYRUN
+then
+  args=$args" --dry-run"
+fi
+
 if $SEPARATE
 then
   for d in $DOMAINS
