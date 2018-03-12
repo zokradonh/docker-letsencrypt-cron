@@ -51,7 +51,7 @@ then
   args=$args" --dry-run"
 fi
 
-if $SEPARATE
+if [ $SEPARATE ]
 then
   for d in $DOMAINS
   do
