@@ -1,7 +1,7 @@
 # docker-letsencrypt-cron
 Create and automatically renew website SSL certificates using the letsencrypt free certificate authority, and its client *certbot*.
 
-This image will renew your certificates every 2 months, and place the lastest ones in the /certs folder in the container, and in the ./certs folder on the host.
+This image will renew your certificates every month, and place the lastest ones in the /certs folder in the container, and in the ./certs folder on the host.
 
 # Usage
 
