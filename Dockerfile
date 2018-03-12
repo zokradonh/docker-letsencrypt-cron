@@ -1,5 +1,5 @@
 FROM python:2-alpine
-MAINTAINER Henri Dwyer <henri@dwyer.io>
+MAINTAINER WebitDesign GbR <development@webitdesign.de>
 
 VOLUME /certs
 VOLUME /etc/letsencrypt
