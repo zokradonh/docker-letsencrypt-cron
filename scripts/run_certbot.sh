@@ -46,7 +46,7 @@ then
   args=$args" --debug"
 fi
 
-if $DRYRUN
+if [ $DRYRUN ]
 then
   args=$args" --dry-run"
 fi
