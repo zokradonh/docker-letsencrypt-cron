@@ -18,15 +18,14 @@ get_certificate() {
   echo "certbot exit code $ec"
   if [ $ec -eq 0 ]
   then
-    if $CONCAT
-    then
-      # concat the full chain with the private key (e.g. for haproxy)
-      cat /etc/letsencrypt/live/$d/fullchain.pem /etc/letsencrypt/live/$d/privkey.pem > /certs/$d.pem
-    else
-      # keep full chain and private key in separate files (e.g. for nginx and apache)
-      cp /etc/letsencrypt/live/$d/fullchain.pem /certs/$d.pem
-      cp /etc/letsencrypt/live/$d/privkey.pem /certs/$d.key
-    fi
+    # concat the full chain with the private key (e.g. for haproxy)
+    cat /etc/letsencrypt/live/$d/fullchain.pem /etc/letsencrypt/live/$d/privkey.pem > /certs/$d.concat.pem
+    # keep full chain and private key in separate files (e.g. for nginx and apache)
+    cp /etc/letsencrypt/live/$d/fullchain.pem /certs/$d.fullchain.pem
+    cp /etc/letsencrypt/live/$d/privkey.pem /certs/$d.key.pem
+    # seperate cert and chain e.g. for openldap and older apache/nginx-versions
+    cp /etc/letsencrypt/live/$d/cert.pem /certs/$d.cert.pem
+    cp /etc/letsencrypt/live/$d/chain.pem /certs/$d.chain.pem
     echo "Certificate obtained for $CERT_DOMAINS! Your new certificate - named $d - is in /certs"
   else
     echo "Cerbot failed for $CERT_DOMAINS. Check the logs for details."
