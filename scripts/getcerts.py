@@ -25,7 +25,9 @@ def read_domain_config():
             continue
 
         debug = False
-        params = (cert+" certonly -n --agree-tos --renew-with-new-domains"
+        params = (cert+" certonly -n --agree-tos"
+            +" --renew-with-new-domains" # renew if domain-list changed
+            +" --keep-until-expiring"   # otherwise keep until it expires
             +" --cert-name "+cert
         )
 
