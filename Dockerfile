@@ -1,13 +1,13 @@
-FROM python:2-alpine
+FROM python:3-alpine
 MAINTAINER WebitDesign GbR <development@webitdesign.de>
 
 VOLUME /certs
 VOLUME /etc/letsencrypt
-EXPOSE 80
+EXPOSE 80 443
 
 RUN apk add --no-cache --virtual .build-deps linux-headers gcc musl-dev\
   && apk add --no-cache libffi-dev openssl-dev dialog\
-  && pip install certbot\
+  && pip install setuptools wheel ruamel.yaml certbot --no-cache-dir\
   && apk del .build-deps\
   && mkdir /scripts
 
@@ -15,7 +15,7 @@ ADD crontab /etc/crontabs
 RUN crontab /etc/crontabs/crontab
 
 COPY ./scripts/ /scripts
-RUN chmod +x /scripts/run_certbot.sh
+RUN chmod +x /scripts/ -R
 
-ENTRYPOINT []
-CMD ["crond", "-f"]
+ENTRYPOINT ["/scripts/entrypoint.sh"]
+CMD ["/scripts/startup.sh"]

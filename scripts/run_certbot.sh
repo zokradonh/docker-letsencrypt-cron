@@ -1,63 +1,24 @@
-echo "Running certbot for domains $DOMAINS"
+certname=$1
+shift
 
-get_certificate() {
-  # Gets the certificate for the domain(s) CERT_DOMAINS (a comma separated list)
-  # The certificate will be named after the first domain in the list
-  # To work, the following variables must be set:
-  # - CERT_DOMAINS : comma separated list of domains
-  # - EMAIL
-  # - CONCAT
-  # - args
+echo "Running certbot for cert $certname"
+certbot $@
+ec=$?
+echo "certbot exit code $ec"
+if [ $ec -eq 0 ]; then
+  # concat the full chain with the private key (e.g. for haproxy)
+  cat /etc/letsencrypt/live/$certname/fullchain.pem /etc/letsencrypt/live/$certname/privkey.pem > /certs/$certname.concat.pem
 
-  local d=${CERT_DOMAINS//,*/} # read first domain
-  echo "Getting certificate for $CERT_DOMAINS"
-  certbot certonly --agree-tos --renew-by-default -n \
-  --text --server https://acme-v02.api.letsencrypt.org/directory \
-  --email $EMAIL -d $CERT_DOMAINS $args
-  ec=$?
-  echo "certbot exit code $ec"
-  if [ $ec -eq 0 ]
-  then
-    # concat the full chain with the private key (e.g. for haproxy)
-    cat /etc/letsencrypt/live/$d/fullchain.pem /etc/letsencrypt/live/$d/privkey.pem > /certs/$d.concat.pem
-    # keep full chain and private key in separate files (e.g. for nginx and apache)
-    cp /etc/letsencrypt/live/$d/fullchain.pem /certs/$d.fullchain.pem
-    cp /etc/letsencrypt/live/$d/privkey.pem /certs/$d.key.pem
-    # seperate cert and chain e.g. for openldap and older apache/nginx-versions
-    cp /etc/letsencrypt/live/$d/cert.pem /certs/$d.cert.pem
-    cp /etc/letsencrypt/live/$d/chain.pem /certs/$d.chain.pem
-    echo "Certificate obtained for $CERT_DOMAINS! Your new certificate - named $d - is in /certs"
-  else
-    echo "Cerbot failed for $CERT_DOMAINS. Check the logs for details."
-  fi
-}
+  # keep full chain and private key in separate files (e.g. for nginx and apache)
+  cp /etc/letsencrypt/live/$certname/fullchain.pem /certs/$certname.fullchain.pem
+  cp /etc/letsencrypt/live/$certname/privkey.pem /certs/$certname.key.pem
 
-args=""
-if [ $WEBROOT ]
-then
-  args=" --webroot -w $WEBROOT"
+  # seperate cert and chain e.g. for openldap and older apache/nginx-versions
+  cp /etc/letsencrypt/live/$certname/cert.pem /certs/$certname.cert.pem
+  cp /etc/letsencrypt/live/$certname/chain.pem /certs/$certname.chain.pem
+  echo "Certificate $certname obtained! Your new certificate is in /certs"
 else
-  args=" --standalone --preferred-challenges http"
+  echo "Cerbot failed for $certname. Check the logs for details."
 fi
 
-if $DEBUG
-then
-  args=$args" --debug"
-fi
-
-if [ $DRYRUN ]
-then
-  args=$args" --dry-run"
-fi
-
-if [ $SEPARATE ]
-then
-  for d in $DOMAINS
-  do
-    CERT_DOMAINS=$d
-    get_certificate
-  done
-else
-  CERT_DOMAINS=${DOMAINS// /,}
-  get_certificate
-fi
+exit $ec

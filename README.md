@@ -1,29 +1,65 @@
 # Code origin
-This repository is based on a fork from https://github.com/henridwyer/docker-letsencrypt-cron.
+This repository is based on a fork from https://github.com/henridwyer/docker-letsencrypt-cron, but has changed significantly since then.
 
 # docker-letsencrypt-cron
 Create and automatically renew website SSL certificates using the letsencrypt free certificate authority, and its client *certbot*.
 
-This image will renew your certificates every month, and place the lastest ones in the /certs folder in the container, and in the ./certs folder on the host.
+This image will renew your certificates on startup and every full hour, and place the lastest ones in the /certs folder in the container.
 
 # Usage
 
-## Setup
+## Config-file
+Configurations have to be saved or mounted as `/le/certs.yml` or `/le/certs.yaml` (`.yml` has a higher priority). Root elements will be the name of your certs.
 
-In docker-compose.yml, change the environment variables:
-- WEBROOT: set this variable to the webroot path if you want to use the webroot plugin. Leave to use the standalone webserver.
-- DOMAINS: a space separated list of domains for which you want to generate certificates.
-- EMAIL: where you will receive updates from letsencrypt.
-- CONCAT: true or false, whether you want to concatenate the certificate's full chain with the private key (required for e.g. haproxy), or keep the two files separate (required for e.g. nginx or apache).
-- SEPARATE: true or false, whether you want one certificate per domain or one certificate valid for all domains. 
-- DRYRUN: true or false, whether you want to perform actions with `--dry-run`
+Field | Meaning | Default | Mandatory
+--- | --- | --- | ---
+args | Addition args to pass to certbot (as a string) | _None_ | no
+challenges | Prefered challenges | http | no
+debug | print debug-statements | false | no
+disabled | do not try to issue a certificate and ignore this entry | false | no
+domains | List of domains included in the cert as a yaml-list | _None_ | yes
+dry_run | Do not issue an actual cert | false | no
+email | Let's Encrypt account mail | _None_ | yes
+staging | Obtain a staging cert. Ignored if used with `dry_run` | false | no
+webroot | Path to webroot. If this is set webroot mode is used instead of standalone | _None_ | no
+
+Example:
+```yaml
+example.com:
+  domains:
+    - example.com
+    - example.org
+  dry_run: true
+  debug: true
+  challenges: 'http'
+  email: 'test@example.org'
+mycert:
+  domains:
+    - test.example.com
+  dry_run: true
+  webroot: '/webroot'
+  email: 'test@example.org'
+  staging: true
+wildcard:
+  domains:
+    - *.example.com
+  challenges: 'dns' # currently unsupported
+  dry_run: true
+min:
+  domains:
+    - min.example.com
+  email: test@example.com
+```
+The issued certificates will be named 'example.com', 'mycert' and 'wildcard'
 
 ## Running
+
+Running the image with _issue_ or _renew_ (both do the same) as command, the container will try to obtain an certificate immediately. Otherwise the command just gets executed.
 
 ### Using the automated image
 
 ```shell
-docker run --name certbot -v `pwd`/certs:/certs --restart always -e "DOMAINS=domain1.com domain2.com" -e "EMAIL=webmaster@domain1.com" -e "CONCAT=true" -e "WEBROOT=" henridwyer/docker-letsencrypt-cron
+docker run --name certbot -v /YOUR/CERT/DIR:/certs -v/CONF/DIR/certs.yml:/le/certs.yml --restart always webitdesign/docker-letsencrypt-cron
 ```
 
 ### Building the image
@@ -34,13 +70,37 @@ The easiest way to build the image yourself is to use the provided docker-compos
 docker-compose up -d
 ```
 
-The first time you start it up, you may want to run the certificate generation script immediately:
+You may want to run the certificate generation script immediately after changing `certs.yml`:
 
 ```shell
-docker exec certbot ash -c "/scripts/run_certbot.sh"
+docker exec certbot ash -c "issue"
 ```
 
-At 3AM, on the 1st of every odd month, a cron job will start the script, renewing your certificates.
+### docker-compose
+Example docker-compose.yml:
+```yaml
+version: '3.3'
+services:
+  letsencrypt: webitdesign/letsencrypt-cron
+  container_name: letsencrypt
+  volumes:
+    - ./certs:/certs
+    - ./cert-config.yml:/le/certs.yml
+  ports:
+    - '80:80'
+  restart: always
+```
+
+## Obtained certificates
+`{cert}` is a placeholder for the certificates names.
+
+File | Content
+--- | ---
+{cert}.cert.pem | Certificate solely
+{cert}.chain.pem | Validation chain
+{cert}.fullchain.pem | Certificate and validation chain
+{cert}.key.pem | Private key
+{cert}.concat.pem | fullchain and key combined
 
 # ACME Validation challenge
 
@@ -82,6 +142,15 @@ server {
 
 ```
 
+## Apache example
+In the following example `$container` is the name of your letsencrypt-container, e.g. _letsencrypt_.
+
+``` apache
+  ProxyPreserveHost On
+  ProxyPass "/.well-known/" "http://$container/.well-known/"
+  ProxyPassReverse "/.well-known/" "http://$container/.well-known/"
+```
+
 # More information
 
 Find out more about letsencrypt: https://letsencrypt.org
@@ -89,6 +158,12 @@ Find out more about letsencrypt: https://letsencrypt.org
 Certbot github: https://github.com/certbot/certbot
 
 # Changelog
+### 0.4
+- Rewrite
+- Use config-file instead of environment-variables
+- Renew every hour
+- Do not force renewal
+- Use python:3-alpine image instead of python:2-alpine
 
 ### 0.3
 - Add support for webroot mode.
