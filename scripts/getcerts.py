@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from pathlib import Path
 from ruamel.yaml import YAML
 from subprocess import call
