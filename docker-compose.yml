@@ -1,15 +1,11 @@
-version: '2'
+version: '3.3'
 
 services:
-  certbot:
-    build: .
-    container_name: certbot
+  letsencrypt: webitdesign/letsencrypt-cron
+    container_name: letsencrypt
     volumes:
       - ./certs:/certs
+      - ./cert-config.yml:/le/certs.yml
+    ports:
+      - '80:80'
     restart: always
-    environment:
-      - WEBROOT=""
-      - DOMAINS=domain1.com domain2.com
-      - EMAIL=webmaster@domain1.com
-      - CONCAT=true
-      - SEPARATE=true

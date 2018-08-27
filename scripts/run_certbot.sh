@@ -1,3 +1,5 @@
+#!/bin/ash
+
 certname=$1
 shift
 

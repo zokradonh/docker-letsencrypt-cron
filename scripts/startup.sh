@@ -1,7 +1,7 @@
 #!/bin/ash
 
 echo "Trying to install or update certificates"
-python /scripts/getcerts.py
+/usr/bin/issue
 
 echo "Starting cron in foreground"
-crond -f
+exec crond -f
