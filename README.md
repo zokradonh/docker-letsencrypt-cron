@@ -73,7 +73,7 @@ docker-compose up -d
 You may want to run the certificate generation script immediately after changing `certs.yml`:
 
 ```shell
-docker exec certbot ash -c "issue"
+docker exec certbot issue
 ```
 
 ### docker-compose
@@ -82,13 +82,13 @@ Example docker-compose.yml:
 version: '3.3'
 services:
   letsencrypt: webitdesign/letsencrypt-cron
-  container_name: letsencrypt
-  volumes:
-    - ./certs:/certs
-    - ./cert-config.yml:/le/certs.yml
-  ports:
-    - '80:80'
-  restart: always
+    container_name: letsencrypt
+    volumes:
+      - ./certs:/certs
+      - ./cert-config.yml:/le/certs.yml
+    ports:
+      - '80:80'
+    restart: always
 ```
 
 ## Obtained certificates
@@ -158,6 +158,11 @@ Find out more about letsencrypt: https://letsencrypt.org
 Certbot github: https://github.com/certbot/certbot
 
 # Changelog
+### 0.5
+- Added tini for clean container handling
+- Simplified `issue` and `renew` commands
+- Crontab calling nonexistent file
+
 ### 0.4
 - Rewrite
 - Use config-file instead of environment-variables
