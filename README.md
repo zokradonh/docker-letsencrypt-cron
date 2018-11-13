@@ -84,7 +84,7 @@ services:
   letsencrypt: webitdesign/letsencrypt-cron
     container_name: letsencrypt
     volumes:
-      - ./certs:/certs
+      - ./data:/etc/letsencrypt
       - ./cert-config.yml:/le/certs.yml
     ports:
       - '80:80'

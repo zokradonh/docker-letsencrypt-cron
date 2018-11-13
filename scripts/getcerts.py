@@ -27,10 +27,11 @@ def read_domain_config():
             continue
 
         debug = False
-        params = (cert+" certonly -n --agree-tos"
+        params = ("certonly -n --agree-tos"
             +" --renew-with-new-domains" # renew if domain-list changed
             +" --keep-until-expiring"   # otherwise keep until it expires
             +" --cert-name "+cert
+            +" --deploy-hook /scripts/renewal-hook.sh"
         )
 
         if not 'email' in config[cert]:
@@ -82,7 +83,7 @@ def read_domain_config():
 
 def get_cert(params):
     try:
-        call('/scripts/run_certbot.sh {params}'.format(params=params), shell=True)
+        call('certbot {params}'.format(params=params), shell=True)
     finally:
         pass
 
