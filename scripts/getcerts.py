@@ -3,6 +3,7 @@
 from pathlib import Path
 from ruamel.yaml import YAML
 from subprocess import call
+import requests
 
 class ConfigurationException(Exception):
     pass
@@ -77,22 +78,17 @@ def read_domain_config():
         if debug:
             print('Cerbot-args for {cert}: {params}'.format(cert=cert, params=params))
 
-        param_list.append(params)
-
-    return param_list
-
-def get_cert(params):
-    try:
-        call('certbot {params}'.format(params=params), shell=True)
-    finally:
-        pass
+        try:
+            call('certbot {params}'.format(params=params), shell=True)
+            if 'reload_after_renew' in config[cert]:
+                for callurl in config[cert]['reload_after_renew']:
+                    r = requests.post(callurl)
+        finally:
+            pass
 
 if __name__ == '__main__':
     try:
-        param_list = read_domain_config()
-        for p in param_list:
-            get_cert(p)
-
+        read_domain_config()
     except Exception as e:
         print("Error: "+str(e))
     pass

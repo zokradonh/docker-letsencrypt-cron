@@ -1,15 +1,18 @@
 # Code origin
-This repository is based on a fork from https://github.com/henridwyer/docker-letsencrypt-cron, but has changed significantly since then.
+This repository is based on a fork from https://github.com/henridwyer/docker-letsencrypt-cron, but has changed significantly
+since then.
 
 # docker-letsencrypt-cron
 Create and automatically renew website SSL certificates using the letsencrypt free certificate authority, and its client *certbot*.
 
-This image will renew your certificates on startup and every full hour, and place the lastest ones in the /certs folder in the container.
+This image will renew your certificates on startup and every full hour, and place the lastest ones in the /certs folder in the
+container.
 
 # Usage
 
 ## Config-file
-Configurations have to be saved or mounted as `/le/certs.yml` or `/le/certs.yaml` (`.yml` has a higher priority). Root elements will be the name of your certs.
+Configurations have to be saved or mounted as `/le/certs.yml` or `/le/certs.yaml` (`.yml` has a higher priority). Root elements
+will be the name of your certs.
 
 Field | Meaning | Default | Mandatory
 --- | --- | --- | ---
@@ -22,6 +25,8 @@ dry_run | Do not issue an actual cert | false | no
 email | Let's Encrypt account mail | _None_ | yes
 staging | Obtain a staging cert. Ignored if used with `dry_run` | false | no
 webroot | Path to webroot. If this is set webroot mode is used instead of standalone | _None_ | no
+reload_after_renew | List of Docker API calls to be made after renewal (e.g. restart Apache-Container) | _None_ | no
+
 
 Example:
 ```yaml
@@ -40,6 +45,8 @@ mycert:
   webroot: '/webroot'
   email: 'test@example.org'
   staging: true
+  reload_after_renew: 
+    - http://dockerproxy:2751/containers/THE_REMOTE_CONTAINER_NAME/kill?signal=SIGHUP
 wildcard:
   domains:
     - *.example.com
@@ -52,9 +59,15 @@ min:
 ```
 The issued certificates will be named 'example.com', 'mycert' and 'wildcard'
 
+## Reload feature (reload_after_renew)
+
+In order to use this feature another container is needed (https://github.com/zokradonh/docker-socket-proxy). Be careful with this
+container since it has access to `/var/run/docker.sock`.
+
 ## Running
 
-Running the image with _issue_ or _renew_ (both do the same) as command, the container will try to obtain an certificate immediately. Otherwise the command just gets executed.
+Running the image with _issue_ or _renew_ (both do the same) as command, the container will try to obtain an certificate 
+immediately. Otherwise the command just gets executed.
 
 ### Using the automated image
 
@@ -89,6 +102,16 @@ services:
     ports:
       - '80:80'
     restart: always
+  
+  dockerproxy: zokradonh/docker-socket-proxy
+    container_name: docker-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./cert-config.yml:/le/certs.yml
+    environment:
+      - POST=1 # allow HTTP-POST API calls (e.g. container stop/kill/restart)
+      - ALLOW_RELOADS=/le/certs.yml
+
 ```
 
 ## Obtained certificates
@@ -104,9 +127,11 @@ File | Content
 
 # ACME Validation challenge
 
-To authenticate the certificates, the you need to pass the ACME validation challenge. This requires requests made on port 80 to your.domain.com/.well-known/ to be forwarded to this container.
+To authenticate the certificates, the you need to pass the ACME validation challenge. This requires requests made on port 80 to
+ your.domain.com/.well-known/ to be forwarded to this container.
 
-The recommended way to use this image is to set up your reverse proxy to automatically forward requests for the ACME validation challenges to this container.
+The recommended way to use this image is to set up your reverse proxy to automatically forward requests for the ACME validation 
+challenges to this container.
 
 ## Haproxy example
 
@@ -158,6 +183,9 @@ Find out more about letsencrypt: https://letsencrypt.org
 Certbot github: https://github.com/certbot/certbot
 
 # Changelog
+### 0.6
+- Added feature to reload/restart other containers after renewal
+
 ### 0.5
 - Added tini for clean container handling
 - Simplified `issue` and `renew` commands
