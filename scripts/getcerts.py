@@ -80,9 +80,12 @@ def read_domain_config():
 
         try:
             call('certbot {params}'.format(params=params), shell=True)
-            if 'reload_after_renew' in config[cert]:
-                for callurl in config[cert]['reload_after_renew']:
-                    r = requests.post(callurl)
+            isRenewed = Path('/etc/letsencrypt/live/{certname}/new.event')
+            if (isRenewed.is_file):
+                isRenewed.unlink()
+                if 'reload_after_renew' in config[cert]:
+                    for callurl in config[cert]['reload_after_renew']:
+                        r = requests.post(callurl)
         finally:
             pass
 
