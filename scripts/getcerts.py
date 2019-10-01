@@ -3,6 +3,7 @@
 from pathlib import Path
 from ruamel.yaml import YAML
 from subprocess import call
+from shlex import quote
 import requests
 
 class ConfigurationException(Exception):
@@ -44,13 +45,23 @@ def read_domain_config():
             print("No domains for {cert}".format(cert=cert))
             continue
         for d in config[cert]['domains']:
-            params += ' -d '+d
+            params += ' -d '+quote(d)
 
         params += ' --preferred-challenges '
         if 'challenges' in config[cert]:
             params += config[cert]['challenges']
         else:
             params += 'http'
+
+        if 'challenges' in config[cert] and config[cert]['challenges'] == "dns":
+            if not 'acmednsurl' in config[cert]:
+                os.environ['ACMEDNSAUTH_URL'] = "https://auth.acme-dns.io"
+            else:
+                os.environ['ACMEDNSAUTH_URL'] = config[cert]['acmednsurl']
+            params += ' --manual'
+            params += ' --manual-auth-hook /scripts/acme-dns-auth.py'
+            if len(sys.argv) > 1 and sys.argv[1] == "initial":
+                params += ' --debug-challenges'
 
         if 'debug' in config[cert] and config[cert]['debug']:
             params += ' --debug'
