@@ -5,6 +5,8 @@ from ruamel.yaml import YAML
 from subprocess import call
 from shlex import quote
 import requests
+import os
+import sys
 
 class ConfigurationException(Exception):
     pass
@@ -53,16 +55,6 @@ def read_domain_config():
         else:
             params += 'http'
 
-        if 'challenges' in config[cert] and config[cert]['challenges'] == "dns":
-            if not 'acmednsurl' in config[cert]:
-                os.environ['ACMEDNSAUTH_URL'] = "https://auth.acme-dns.io"
-            else:
-                os.environ['ACMEDNSAUTH_URL'] = config[cert]['acmednsurl']
-            params += ' --manual'
-            params += ' --manual-auth-hook /scripts/acme-dns-auth.py'
-            if len(sys.argv) > 1 and sys.argv[1] == "initial":
-                params += ' --debug-challenges'
-
         if 'debug' in config[cert] and config[cert]['debug']:
             params += ' --debug'
             debug = True
@@ -78,10 +70,20 @@ def read_domain_config():
                 endpoint = "https://acme-staging-v02.api.letsencrypt.org/directory"
             params += ' --server '+endpoint
 
-        if 'webroot' in config[cert] and config[cert]['webroot']:
-            params += ' --webroot -w '+config[cert]['webroot']
+        if 'challenges' in config[cert] and config[cert]['challenges'] == "dns":
+            if not 'acmednsurl' in config[cert]:
+                os.environ['ACMEDNSAUTH_URL'] = "https://auth.acme-dns.io"
+            else:
+                os.environ['ACMEDNSAUTH_URL'] = config[cert]['acmednsurl']
+            params += ' --manual --manual-public-ip-logging-ok'
+            params += ' --manual-auth-hook /scripts/acme-dns-auth.py'
+            if len(sys.argv) > 1 and sys.argv[1] == "initial":
+                params += ' --debug-challenges'
         else:
-            params += ' --standalone'
+            if 'webroot' in config[cert] and config[cert]['webroot']:
+                params += ' --webroot -w '+config[cert]['webroot']
+            else:
+                params += ' --standalone'
 
         if 'args' in config[cert]:
             params += ' '+conf[cert]['args']
