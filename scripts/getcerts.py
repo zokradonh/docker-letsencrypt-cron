@@ -4,12 +4,14 @@ from pathlib import Path
 from ruamel.yaml import YAML
 from subprocess import call
 from shlex import quote
+import os
+import sys
 import requests
 
 class ConfigurationException(Exception):
     pass
 
-def read_domain_config():
+def make_requests():
     # get path
     path = Path('/le/certs.yml')
     if not path.is_file():
@@ -29,6 +31,8 @@ def read_domain_config():
             continue
 
         debug = False
+
+        # Set general parameters
         params = ("certonly -n --agree-tos"
             +" --renew-with-new-domains" # renew if domain-list changed
             +" --keep-until-expiring"   # otherwise keep until it expires
@@ -36,37 +40,32 @@ def read_domain_config():
             +" --deploy-hook /scripts/renewal-hook.sh"
         )
 
+        # Set E-Mail
         if not 'email' in config[cert]:
             print("Missing email for {cert}".format(cert=cert))
             continue
         params += ' --email '+config[cert]['email']
 
+        # Set Domain
         if not 'domains' in config[cert]:
             print("No domains for {cert}".format(cert=cert))
             continue
         for d in config[cert]['domains']:
             params += ' -d '+quote(d)
 
+        # Set Challenge
         params += ' --preferred-challenges '
         if 'challenges' in config[cert]:
             params += config[cert]['challenges']
         else:
             params += 'http'
-
-        if 'challenges' in config[cert] and config[cert]['challenges'] == "dns":
-            if not 'acmednsurl' in config[cert]:
-                os.environ['ACMEDNSAUTH_URL'] = "https://auth.acme-dns.io"
-            else:
-                os.environ['ACMEDNSAUTH_URL'] = config[cert]['acmednsurl']
-            params += ' --manual'
-            params += ' --manual-auth-hook /scripts/acme-dns-auth.py'
-            if len(sys.argv) > 1 and sys.argv[1] == "initial":
-                params += ' --debug-challenges'
-
+        
+        # Debug option
         if 'debug' in config[cert] and config[cert]['debug']:
             params += ' --debug'
             debug = True
 
+        # Dry Run option
         if 'dry_run' in config[cert] and config[cert]['dry_run']:
             params += ' --dry-run'
             print("-------------dRY")
@@ -78,11 +77,24 @@ def read_domain_config():
                 endpoint = "https://acme-staging-v02.api.letsencrypt.org/directory"
             params += ' --server '+endpoint
 
-        if 'webroot' in config[cert] and config[cert]['webroot']:
-            params += ' --webroot -w '+config[cert]['webroot']
+        if 'challenges' in config[cert] and config[cert]['challenges'] == "dns":
+            # DNS-01 challenge
+            if not 'acmednsurl' in config[cert]:
+                os.environ['ACMEDNSAUTH_URL'] = "https://auth.acme-dns.io"
+            else:
+                os.environ['ACMEDNSAUTH_URL'] = config[cert]['acmednsurl']
+            params += ' --manual --manual-public-ip-logging-ok'
+            params += ' --manual-auth-hook /scripts/acme-dns-auth.py'
+            if len(sys.argv) > 1 and sys.argv[1] == "initial":
+                params += ' --debug-challenges'
         else:
-            params += ' --standalone'
+            # HTTP-01 challenge via webroot or standalone
+            if 'webroot' in config[cert] and config[cert]['webroot']:
+                params += ' --webroot -w '+config[cert]['webroot']
+            else:
+                params += ' --standalone'
 
+        # Additional custom args
         if 'args' in config[cert]:
             params += ' '+conf[cert]['args']
 
@@ -90,7 +102,10 @@ def read_domain_config():
             print('Cerbot-args for {cert}: {params}'.format(cert=cert, params=params))
 
         try:
+            # Request certificate
             call('certbot {params}'.format(params=params), shell=True)
+
+            # Run renew handler if there is a new certificate (and if there is a handler)
             isRenewed = Path('/etc/letsencrypt/live/{certname}/new.event'.format(certname=cert))
             if isRenewed.is_file():
                 isRenewed.unlink()
@@ -103,7 +118,7 @@ def read_domain_config():
 
 if __name__ == '__main__':
     try:
-        read_domain_config()
+        make_requests()
     except Exception as e:
         print("Error: "+str(e))
     pass
