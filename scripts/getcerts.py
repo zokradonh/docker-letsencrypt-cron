@@ -7,6 +7,8 @@ from shlex import quote
 import os
 import sys
 import requests
+import os
+import sys
 
 class ConfigurationException(Exception):
     pass

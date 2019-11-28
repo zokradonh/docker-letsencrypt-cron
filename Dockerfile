@@ -12,7 +12,7 @@ COPY ./scripts/ /scripts
 
 RUN curl -s -S -o /scripts/acme-dns-auth.py https://raw.githubusercontent.com/joohoi/acme-dns-certbot-joohoi/master/acme-dns-auth.py \
     && chmod 0700 /scripts/acme-dns-auth.py \
-    && sed -i "s/ACMEDNS_URL\s*=\s*\".*\"/ACMEDNS_URL = os.environ.get\(\"ACMEDNSAUTH_URL\", None\)/" /scripts/acme-dns-auth.py \
+    && sed -i "s/ACMEDNS_URL\s*=.*/ACMEDNS_URL = os.environ.get\(\"ACMEDNSAUTH_URL\", None\)/" /scripts/acme-dns-auth.py \
     && crontab /etc/crontabs/crontab \  
     && chmod +x /scripts/ -R \
     && ln -s /scripts/getcerts.py /usr/bin/issue \
