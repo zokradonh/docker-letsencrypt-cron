@@ -3,7 +3,7 @@ FROM python:3-alpine
 LABEL maintainer="WebitDesign GbR <development@webitdesign.de>"
 
 RUN apk add --no-cache --virtual .build-deps linux-headers gcc musl-dev \
-  && apk add --no-cache libffi-dev openssl-dev dialog tini curl \
+  && apk add --no-cache libffi-dev openssl-dev dialog tini curl jq \
   && pip install setuptools wheel ruamel.yaml certbot requests --no-cache-dir \
   && apk del .build-deps
 
