@@ -1,12 +1,42 @@
 version: '3.3'
 
 services:
-  letsencrypt: webitdesign/letsencrypt-cron
+  letsencrypt: zokradonh/letsencrypt-cron
     container_name: letsencrypt
     volumes:
-      - ./data:/etc/letsencrypt
+      - certs:/etc/letsencrypt
       - ./cert-config.yml:/le/certs.yml
+    networks:
+      - dockerproxy-net
     ports:
       - '80:80'
     restart: always
-    
+
+  dockerproxy: # only needed for container reloads
+    image: tecnativa/docker-socket-proxy
+    container_name: privileged_dockerproxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - dockerproxy-net
+    environment:
+      - ALLOW_RESTARTS=1
+      - POST=1
+
+  acmedns: # only needed for DNS-01 validation
+    image: joohoi/acme-dns
+    container_name: acme-dns-server
+    volumes:
+      - acmedata:/var/lib/acme-dns
+      - ./config:/etc/acme-dns
+    ports:
+      - 53:53/tcp
+      - 53:53/udp
+
+volumes:
+  certs:
+  acmedata:
+
+networks:
+  dockerproxy-net:
+    driver: bridge
