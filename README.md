@@ -17,6 +17,7 @@ Field | Meaning | Default | Mandatory
 --- | --- | --- | ---
 args | Addition args to pass to certbot (as a string) | _None_ | no
 challenges | Prefered challenges | http | no
+ecdsa | Use ECDSA key instead of RSA | false | no
 debug | print debug-statements | false | no
 disabled | do not try to issue a certificate and ignore this entry | false | no
 domains | List of domains included in the cert as a yaml-list | _None_ | yes
@@ -42,6 +43,7 @@ mycert:
   domains:
     - test.example.com
   dry_run: true
+  ecdsa: true
   webroot: '/webroot'
   email: 'test@example.org'
   staging: true
