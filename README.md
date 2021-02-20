@@ -49,7 +49,7 @@ mycert:
     - http://dockerproxy:2751/containers/THE_REMOTE_CONTAINER_ID_OR_NAME/kill?signal=SIGHUP
 wildcard:
   domains:
-    - *.example.com
+    - "*.example.com"
   challenges: 'dns'
   acmednsurl: https://auth.acme-dns.io
   dry_run: true
