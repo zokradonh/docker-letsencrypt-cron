@@ -67,6 +67,10 @@ def make_requests():
             params += ' --debug'
             debug = True
 
+        # ECDSA key type option
+        if 'ecdsa' in config[cert] and config[cert]['ecdsa']:
+            params += ' --key-type ecdsa'
+
         # Dry Run option
         if 'dry_run' in config[cert] and config[cert]['dry_run']:
             params += ' --dry-run'
@@ -98,7 +102,7 @@ def make_requests():
 
         # Additional custom args
         if 'args' in config[cert]:
-            params += ' '+conf[cert]['args']
+            params += ' '+config[cert]['args']
 
         if debug:
             print('Cerbot-args for {cert}: {params}'.format(cert=cert, params=params))
