@@ -89,7 +89,7 @@ def make_requests():
                 os.environ['ACMEDNSAUTH_URL'] = "https://auth.acme-dns.io"
             else:
                 os.environ['ACMEDNSAUTH_URL'] = config[cert]['acmednsurl']
-            params += ' --manual --manual-public-ip-logging-ok'
+            params += ' --manual'
             params += ' --manual-auth-hook /scripts/acme-dns-auth.py'
             if len(sys.argv) > 1 and sys.argv[1] == "initial":
                 params += ' --debug-challenges'
