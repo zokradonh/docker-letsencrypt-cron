@@ -114,7 +114,7 @@ services:
       - ./cert-config.yml:/le/certs.yml
     environment:
       - POST=1 # allow HTTP-POST API calls (e.g. container stop/kill/restart)
-      - ALLOW_RELOADS=/le/certs.yml
+      - ALLOW_RESTARTS=1
 
 ```
 
